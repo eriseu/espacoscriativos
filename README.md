@@ -321,3 +321,29 @@ Exemplo de payload:
 ```
 
 Se `organization_id` não for informado, a API usa `ORG_DEFAULT_ID` do `.env`.
+
+---
+
+# Integração n8n + Evolution (Resumo)
+
+Fluxo recomendado:
+
+Webhook (Evolution) -> n8n -> API -> resposta -> Evolution
+
+Campos mínimos esperados pela API:
+
+phone (ex: 559999999999)
+text (comando do usuário)
+organization_id (UUID) ou use ORG_DEFAULT_ID
+
+Sugestão de mapeamento no n8n:
+
+1. Receber payload do Evolution
+2. Normalizar telefone (remover símbolos)
+3. Extrair mensagem de texto
+4. Chamar POST /whatsapp/handle
+5. Enviar reply de volta via Evolution
+
+Resposta da API:
+
+reply (texto pronto para o WhatsApp)
