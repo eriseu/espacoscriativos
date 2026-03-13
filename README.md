@@ -269,6 +269,7 @@ Comandos principais:
 saldo
 agenda hoje
 reservar HH:MM
+credito <telefone> <quantidade> (admin)
 
 ---
 
@@ -321,6 +322,10 @@ Exemplo de payload:
 ```
 
 Se `organization_id` não for informado, a API usa `ORG_DEFAULT_ID` do `.env`.
+
+Variáveis adicionais:
+
+ADMIN_PHONE (somente este número pode usar o comando `credito`)
 
 ---
 

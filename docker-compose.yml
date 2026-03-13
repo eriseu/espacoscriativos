@@ -8,19 +8,27 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - espacos_pgdata:/var/lib/postgresql/data
+    networks:
+      - baota_net
 
   api:
     image: node:20
     container_name: espacos_api
     working_dir: /app
     volumes:
-      - ./:/app
+      - /www/wwwroot/espacoscriativos:/app
     command: sh -c "npm install && npm run start"
     environment:
       PORT: 3000
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/espacos_criativos
     depends_on:
       - postgres
+    networks:
+      - baota_net
 
 volumes:
   espacos_pgdata:
+
+networks:
+  baota_net:
+    external: true

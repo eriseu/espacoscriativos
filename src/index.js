@@ -12,6 +12,7 @@ const port = process.env.PORT || 3000;
 const normalizeText = (text) => (text || '').trim().toLowerCase();
 
 const getOrgId = (body) => body.organization_id || process.env.ORG_DEFAULT_ID;
+const adminPhone = (process.env.ADMIN_PHONE || '').replace(/\D/g, '');
 
 const ensureOrgId = (orgId) => {
   if (!orgId) {
@@ -251,11 +252,43 @@ app.post('/whatsapp/handle', async (req, res, next) => {
     }
 
     const normalized = normalizeText(text);
+    const normalizedPhone = phone.replace(/\D/g, '');
+
+    if (normalized.startsWith('credito ')) {
+      if (!adminPhone || normalizedPhone !== adminPhone) {
+        return res.json({ reply: 'Comando restrito ao administrador.' });
+      }
+
+      const parts = normalized.split(' ');
+      if (parts.length < 3) {
+        return res.json({ reply: 'Use: credito <telefone> <quantidade>' });
+      }
+
+      const targetPhone = parts[1].replace(/\D/g, '');
+      const amount = Number(parts[2]);
+      if (!targetPhone || !Number.isFinite(amount)) {
+        return res.json({ reply: 'Use: credito <telefone> <quantidade>' });
+      }
+
+      await withTransaction(async (client) => {
+        const userId = await findOrCreateUser(client, orgId, targetPhone);
+        await client.query(
+          'UPDATE wallets SET balance = balance + $1 WHERE organization_id = $2 AND user_id = $3',
+          [amount, orgId, userId]
+        );
+        await client.query(
+          'INSERT INTO credit_transactions (organization_id, user_id, amount, type, reason) VALUES ($1, $2, $3, $4, $5)',
+          [orgId, userId, amount, 'manual_adjustment', 'Carga via WhatsApp']
+        );
+      });
+
+      return res.json({ reply: `Crédito aplicado para ${targetPhone}.` });
+    }
 
     if (normalized === 'saldo') {
       const user = await query(
         'SELECT id FROM users WHERE organization_id = $1 AND phone = $2',
-        [orgId, phone]
+        [orgId, normalizedPhone]
       );
       if (user.rows.length === 0) {
         return res.json({ reply: 'Seu saldo é 0 créditos.' });
@@ -276,7 +309,7 @@ app.post('/whatsapp/handle', async (req, res, next) => {
            AND r.status = 'confirmed'
            AND r.start_time::date = $3::date
          ORDER BY r.start_time`,
-        [orgId, phone, date]
+        [orgId, normalizedPhone, date]
       );
 
       if (response.rows.length === 0) {
@@ -317,7 +350,7 @@ app.post('/whatsapp/handle', async (req, res, next) => {
 
       const reservation = await createReservation({
         orgId,
-        phone,
+        phone: normalizedPhone,
         spaceId: selectedSpaceId,
         startTime,
         endTime
@@ -328,7 +361,17 @@ app.post('/whatsapp/handle', async (req, res, next) => {
 
     return res.json({ reply: 'Comando não reconhecido. Use: saldo, agenda hoje, reservar HH:MM' });
   } catch (err) {
-    next(err);
+    const status = err.status || 500;
+    if (status === 402) {
+      return res.json({ reply: 'Saldo insuficiente para esta reserva.' });
+    }
+    if (status === 409) {
+      return res.json({ reply: 'Horário indisponível para este espaço.' });
+    }
+    if (status === 400) {
+      return res.json({ reply: 'Dados inválidos. Use: saldo, agenda hoje, reservar HH:MM' });
+    }
+    return res.json({ reply: 'Ocorreu um erro. Tente novamente em instantes.' });
   }
 });
 
