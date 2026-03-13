@@ -270,6 +270,7 @@ saldo
 agenda hoje
 reservar HH:MM
 credito <telefone> <quantidade> (admin)
+saldo <telefone> (admin)
 
 ---
 

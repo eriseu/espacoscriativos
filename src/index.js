@@ -285,6 +285,33 @@ app.post('/whatsapp/handle', async (req, res, next) => {
       return res.json({ reply: `Crédito aplicado para ${targetPhone}.` });
     }
 
+    if (normalized.startsWith('saldo ')) {
+      if (!adminPhone || normalizedPhone !== adminPhone) {
+        return res.json({ reply: 'Comando restrito ao administrador.' });
+      }
+
+      const parts = normalized.split(' ');
+      if (parts.length < 2) {
+        return res.json({ reply: 'Use: saldo <telefone>' });
+      }
+
+      const targetPhone = parts[1].replace(/\D/g, '');
+      if (!targetPhone) {
+        return res.json({ reply: 'Use: saldo <telefone>' });
+      }
+
+      const user = await query(
+        'SELECT id FROM users WHERE organization_id = $1 AND phone = $2',
+        [orgId, targetPhone]
+      );
+      if (user.rows.length === 0) {
+        return res.json({ reply: `Saldo de ${targetPhone}: 0 créditos.` });
+      }
+
+      const balance = await getWalletBalance(orgId, user.rows[0].id);
+      return res.json({ reply: `Saldo de ${targetPhone}: ${balance} crédito(s).` });
+    }
+
     if (normalized === 'saldo') {
       const user = await query(
         'SELECT id FROM users WHERE organization_id = $1 AND phone = $2',
