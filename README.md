@@ -353,6 +353,27 @@ Listar espaços:
 
 GET /admin/spaces?organization_id=ORG_UUID
 
+Atualizar espaço:
+
+PUT /admin/spaces/:id
+
+Payload (parcial):
+
+```json
+{
+  "organization_id": "ORG_UUID",
+  "name": "Sala Principal",
+  "location": "Quintal Gonza",
+  "capacity": 25,
+  "available_start": "09:00",
+  "available_end": "21:00"
+}
+```
+
+Remover espaço:
+
+DELETE /admin/spaces/:id?organization_id=ORG_UUID
+
 ---
 
 # Script (Criar Espaço via API)

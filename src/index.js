@@ -170,6 +170,58 @@ app.get('/admin/spaces', async (req, res, next) => {
   }
 });
 
+app.put('/admin/spaces/:id', async (req, res, next) => {
+  try {
+    const orgId = ensureOrgId(getOrgId(req.body));
+    const { id } = req.params;
+    const { name, location, capacity, available_start, available_end } = req.body;
+
+    const updated = await query(
+      `UPDATE spaces
+       SET name = COALESCE($1, name),
+           location = COALESCE($2, location),
+           capacity = COALESCE($3, capacity),
+           available_start = COALESCE($4, available_start),
+           available_end = COALESCE($5, available_end)
+       WHERE id = $6 AND organization_id = $7
+       RETURNING id`,
+      [name ?? null, location ?? null, capacity ?? null, available_start ?? null, available_end ?? null, id, orgId]
+    );
+
+    if (updated.rows.length === 0) {
+      const err = new Error('space not found');
+      err.status = 404;
+      throw err;
+    }
+
+    res.json({ id: updated.rows[0].id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/admin/spaces/:id', async (req, res, next) => {
+  try {
+    const orgId = ensureOrgId(req.query.organization_id || process.env.ORG_DEFAULT_ID);
+    const { id } = req.params;
+
+    const deleted = await query(
+      'DELETE FROM spaces WHERE id = $1 AND organization_id = $2 RETURNING id',
+      [id, orgId]
+    );
+
+    if (deleted.rows.length === 0) {
+      const err = new Error('space not found');
+      err.status = 404;
+      throw err;
+    }
+
+    res.json({ id: deleted.rows[0].id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/users/:phone/balance', async (req, res, next) => {
   try {
     const orgId = ensureOrgId(req.query.organization_id || process.env.ORG_DEFAULT_ID);
