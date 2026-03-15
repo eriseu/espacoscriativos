@@ -17,7 +17,7 @@ services:
     working_dir: /app
     volumes:
       - /www/wwwroot/espacoscriativos:/app
-    command: sh -c "npm install && npm run start"
+    command: sh -c "npm run start"
     environment:
       PORT: 3000
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/espacos_criativos
