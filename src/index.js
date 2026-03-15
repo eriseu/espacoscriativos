@@ -324,6 +324,19 @@ app.post('/whatsapp/handle', async (req, res, next) => {
       return res.json({ reply: `Seu saldo é ${balance} crédito(s).` });
     }
 
+    if (normalized === 'comandos' || normalized === 'ajuda' || normalized === 'help') {
+      return res.json({
+        reply: [
+          'Comandos disponíveis:',
+          'saldo',
+          'agenda hoje',
+          'reservar HH:MM',
+          'credito <telefone> <quantidade> (admin)',
+          'saldo <telefone> (admin)'
+        ].join('\n')
+      });
+    }
+
     if (normalized === 'agenda hoje') {
       const date = today || new Date().toISOString().slice(0, 10);
       const response = await query(
@@ -386,7 +399,7 @@ app.post('/whatsapp/handle', async (req, res, next) => {
       return res.json({ reply: `Reserva confirmada. Créditos usados: ${reservation.credits}.` });
     }
 
-    return res.json({ reply: 'Comando não reconhecido. Use: saldo, agenda hoje, reservar HH:MM' });
+    return res.json({ reply: null });
   } catch (err) {
     const status = err.status || 500;
     if (status === 402) {
