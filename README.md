@@ -330,6 +330,47 @@ ADMIN_PHONE (somente este número pode usar o comando `credito`)
 
 ---
 
+# Admin API (Espaços)
+
+Criar espaço:
+
+POST /admin/spaces
+
+Payload:
+
+```json
+{
+  "organization_id": "ORG_UUID",
+  "name": "Sala Principal",
+  "location": "Quintal Gonza",
+  "capacity": 20,
+  "available_start": "08:00",
+  "available_end": "22:00"
+}
+```
+
+Listar espaços:
+
+GET /admin/spaces?organization_id=ORG_UUID
+
+---
+
+# Script (Criar Espaço via API)
+
+Defina `ORG_DEFAULT_ID` no `.env` e rode:
+
+```bash
+npm run create:space -- "Sala Principal" "Quintal Gonza" 20 08:00 22:00
+```
+
+Opcionalmente, defina `API_BASE_URL` no `.env`:
+
+```
+API_BASE_URL=http://espacos_api:3000
+```
+
+---
+
 # Integração n8n + Evolution (Resumo)
 
 Fluxo recomendado:

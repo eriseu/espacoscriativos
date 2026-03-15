@@ -7,7 +7,8 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "create:space": "node scripts/create_space_via_api.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

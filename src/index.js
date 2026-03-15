@@ -129,6 +129,47 @@ app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/admin/spaces', async (req, res, next) => {
+  try {
+    const orgId = ensureOrgId(getOrgId(req.body));
+    const { name, location, capacity, available_start, available_end } = req.body;
+
+    if (!name) {
+      const err = new Error('name is required');
+      err.status = 400;
+      throw err;
+    }
+
+    const created = await query(
+      `INSERT INTO spaces
+        (organization_id, name, location, capacity, available_start, available_end)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [orgId, name, location || null, capacity || null, available_start || null, available_end || null]
+    );
+
+    res.status(201).json({ id: created.rows[0].id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/admin/spaces', async (req, res, next) => {
+  try {
+    const orgId = ensureOrgId(req.query.organization_id || process.env.ORG_DEFAULT_ID);
+    const result = await query(
+      `SELECT id, name, location, capacity, available_start, available_end
+       FROM spaces
+       WHERE organization_id = $1
+       ORDER BY created_at ASC`,
+      [orgId]
+    );
+    res.json({ spaces: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/users/:phone/balance', async (req, res, next) => {
   try {
     const orgId = ensureOrgId(req.query.organization_id || process.env.ORG_DEFAULT_ID);
